@@ -1,2 +1,5 @@
-
-3|||||||||||||||||||||
+INPUT01 PASSED
+INPUT02 PASSED
+INPUT03 FAILED, see INPUT03.res diff
+EDGE01 PASSED
+EDGE02 FAILED, see EDGE02.res diff

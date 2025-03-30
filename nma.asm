@@ -1,33 +1,67 @@
 .model tiny    
 
-.data
-    FILE_NAME       db 'input.nma', 0     ; Input file name
-    INPUT_HANDLE    dw ?
-    FILE_HANDLE     dw ?                  ; File handle
-    BUFFER          db 16384 dup (?)      ; Reduce buffer size to fit tiny model
-    RES_BUFFER      db 16384 dup (?)
-    BYTES_READ      dw ?                  ; Number of bytes read
-    FILE_OUTPUT     db 'result.txt', 0    ; Output file name
-    INPUT_LENGTH    dw ?
-    RULES_BEGGINING dw ?
-    RULES_SIZE      dw ?
-    LR_SIZE         dw ?      ; Temporary storage for LHS
-
 .code
                  org  100h                               ; COM file must start at offset 100h
+                 
 
-    start:       
-                 mov  ax, @data
-                 mov  ds, ax
-                 xor  ax, ax
+    start:
+                ; mov  ax, @data
+                ; mov  ds, ax
+                ; xor  ax, ax
 
-    ; Open input file (Read-Only)
+        
+;                 mov si, 82h              ; Command-line argument offset in PSP
+;                 mov di, offset FILE_NAME ; Destination address for FILE_NAME
+;                 xor ah, ah               ; Clear AH (not needed for int 21h here)
+
+; startlp:
+;                 mov dl, [bx]            ; Load the byte from [BX] into DL
+;                 cmp dl, 0Dh             ; Check for carriage return (CR)
+;                 je endlp                ; Exit the loop if CR is found
+;                 mov [di], dl            ; Store the current character in FILE_NAME
+;                 inc bx                  ; Increment BX to process the next character
+;                 inc di                  ; Increment DI to store the next character
+;                 jmp startlp             ; Loop back to process the next character
+
+; endlp:
+;                 mov byte ptr [di], 0
+
+
+;                 ;  mov  ah, 09h
+;                 ;  lea  dx, FILE_NAME
+;                 ;  int  21h
+
+;     ; Open input file (Read-Only)
+                MOV di, 0   ; ????????? ????????
+                MOV SI, 82h ; ????????? ?? ??????? ??????????
+                read_loop:
+                    MOV AL, ES:[SI]
+                    CMP AL, 0DH   ; ?????? ?????
+                    JE end_read
+                    MOV FILE_NAME[di], AL  ; ????????? ??????
+                    INC di
+                    INC SI
+                    JMP read_loop
+                end_read:
+
                  mov  dx, offset FILE_NAME
                  mov  ah, 3Dh
                  xor  al, al                             ; AL = 0 (Read-Only mode)
                  int  21h
                  mov  INPUT_HANDLE, ax
+                ;  jc error_handler       ; Jump if carry flag is set
+                ;  jmp read
 
+;                  error_handler:
+;     mov ah, 09h          ; Print error message
+;     lea dx, error_msg    ; Address of error message
+;     int 21h
+;     mov ax, 4C01h        ; Exit with error code
+;     int 21h
+
+; error_msg db 'Error: File not found!', '$'
+
+; read:
     ; Read file (AH = 3Fh)
                  mov  ah, 3Fh
                  mov  bx, INPUT_HANDLE
@@ -36,7 +70,6 @@
                  int  21h
 
     ; Store number of bytes read
-                 mov  BYTES_READ, ax
 
     ; Add '$' terminator for printing
                  mov  di, ax
@@ -95,7 +128,6 @@
                  int  21h
 
     ; Store number of bytes read
-                 mov  BYTES_READ, ax
 
     ; Add '$' terminator for printing
                  mov  di, ax
@@ -130,6 +162,11 @@
                  mov  di, ax
                  mov  byte ptr [RES_BUFFER + di], '$'
 
+                 mov si, 1Ah
+                 mov  LR_SIZE, si
+
+                 
+
 rewrite PROC
 
     mov ah, 3Dh        ; DOS Open File function
@@ -155,6 +192,10 @@ CONTINUE:
 
 SEARCH_BEGINING:
 
+    ; mov  ah, 09h
+    ; lea  dx, RES_BUFFER
+    ; int  21h
+
     xor  si, si
     mov  di, RULES_BEGGINING
     xor  cx, cx
@@ -172,125 +213,142 @@ LOOP_SEARCH:
     je   B_VERIFY
     jmp  LOOP_SEARCH
 
-VER_FAILED:
-    pop  si
-    pop  di
-    jmp  LOOP_SEARCH
-
 B_VERIFY:
     push si
     push di
+
 VERIFY:
     inc  di
     inc  si
     cmp  byte ptr [BUFFER + di], "	"
-    je   REPLACE
+    je   B_REPLACE
     mov  cl, byte ptr [RES_BUFFER + si]
     cmp  cl, byte ptr [BUFFER + di]
     jnz  VER_FAILED
     jmp  VERIFY
 
-REPLACE:
-    dec  si
+VER_FAILED:
+    pop  di
+    pop  si
+    jmp  LOOP_SEARCH
 
-    ; mov  ax, di
-    ; pop  di
-    ; sub  ax, di
-    ; mov  LR_SIZE, ax
-
-    mov  ah, 3Dh        ; DOS Open File function
-    mov  al, 2          ; Open in Read-Write mode
-    mov  dx, offset FILE_OUTPUT
-    int  21h
-    mov  FILE_HANDLE, ax
-    ; Read existing file content before modification
-    mov  ah, 3Fh
-    mov  bx, FILE_HANDLE
-    mov  cx, si
-    lea  dx, RES_BUFFER
-    int  21h
-
-WRITE_REP:
-    inc  di
-    cmp  byte ptr [BUFFER + di], "	"  ; Check if it's a tab character
-    je   WRITE_END                    ; If tab found, stop replacing
-    cmp  byte ptr [BUFFER + di], "$"     ; Check if we reached end of string
-    je   WRITE_END
-
-    mov  al, byte ptr [BUFFER + di]
-    mov  byte ptr [RES_BUFFER + si], al
-    inc  si
-    jmp  WRITE_REP
-
-    NEXT_RULE:
+NEXT_RULE:
     xor  si, si
     dec  si
     inc  di
     cmp  byte ptr [BUFFER + di], 0Ah
     je   PRE_LOOP_SEARCH
     cmp  byte ptr [BUFFER + di], "$"
-    je   END_PROC
+    je   END_PROC1
     jmp  NEXT_RULE
 
-WRITE_END:
 
-    push di
+B_REPLACE:
+    mov ax, di          ; BIGGER DI (WHERE 09h BYTE FOUND)
+    pop di              ; BEGINING OF WHERE THE RULE MATCHED THE LINE
+    pop si              ; LOCATION WHERE THE MATCH WAS FOUND IN INPUT
+    push ax             ; (STORING WHERE 09h BYTE FOUND)
+    sub ax, di          ; SIZE OF LR
+    mov LR_SIZE, ax     ; STORE LR
+    
+    pop di              ; TAKING THE LOCATION WHERE 09h WAS FOUND
+    inc di
+    push di             ; STORE THE LOCATION OF THE FIRST SYMBOL IN THE REPLACE RULE (RIGHT RULE, R_RULE, RR)
+    
+FIND_R_RULE:
+    cmp  byte ptr [BUFFER + di], "	"
+    je   REPLACE
+    inc  di
+    jmp  FIND_R_RULE
+
+REPLACE:
+
+    pop ax
+    push ax             ; STORE THE LOCATION OF THE FIRST SYMBOL IN THE REPLACE RULE (RIGHT RULE, R_RULE, RR)
+    sub di, ax
+   ; mov RR_SIZE, di
+
+    mov ax, LR_SIZE
+    sub ax, di
+
+    mov SIZE_DIFF, ax
+
     push si
 
-    mov si, offset RES_BUFFER ; Load the address of the string
-    xor cx, cx               ; Clear CX to use as a counter
+    mov si, offset RES_BUFFER  ; Source address
+    mov di, offset TEMP_BUFFER   ; Destination address
 
-    count_loop:
-        cmp byte ptr [si], 0 ; Check if the current byte is the null terminator
-        je done              ; If null is found, exit the loop
-        inc si               ; Move to the next character
-        inc cx               ; Increment the counter
-        jmp count_loop
+COPY_LOOP:
+    mov al, [si]      ; Load byte from source
+    mov [di], al      ; Store byte in destination
+    inc si            ; Move to next byte in source
+    inc di            ; Move to next byte in destination
 
-    done:
+    cmp al, 0Dh       ; Check if end marker (0Dh) is reached
+    je COPY_DONE      ; Stop if we reach 0Dh
+
+    jmp COPY_LOOP     ; Repeat
+
+END_PROC1:
+    jmp END_PROC
+
+COPY_DONE:
 
     pop si
-    mov di, cx
-    sub di, si
+    pop di
 
-    mov ah, 42h
-    mov al, 0          ; Relative to start of file
-    mov bx, FILE_HANDLE
-    xor cx, cx         ; CX = high word of offset (not needed for small files)
-    mov dx, di         ; DX = low word of offset
-    int 21h            ; Set file pointer to byte 1024
+    WRITE_REP:
 
-    mov ah, 3Fh
-    mov bx, FILE_HANDLE
-    mov cx, 4000h      ; Read up to 16KB
-    lea dx, RES_BUFFER
-    int 21h            ; Read data into BUFFER
+        cmp  byte ptr [BUFFER + di], "	"  ; Check if it's a tab character
+        je   WRITE_END                    ; If tab found, stop replacing
+        cmp  byte ptr [BUFFER + di], "$"     ; Check if we reached end of string
+        je   WRITE_END
 
-    mov ah, 3Ch        ; DOS Create File function
-    mov cx, 0          ; Normal file attributes
-    mov dx, offset FILE_OUTPUT
-    int 21h    ; If file exists, open it instead
 
-    mov FILE_HANDLE, ax 
-    ; Move file pointer to the beginning before writing (overwrite mode)
-    mov ah, 42h  
-    mov al, 0    ; Move to start (overwrite instead of appending)
-    mov bx, FILE_HANDLE
-    xor cx, cx
-    xor dx, dx
-    int 21h
+        mov  al, byte ptr [BUFFER + di]
+        mov  byte ptr [RES_BUFFER + si], al
+        inc  si
+        inc  di
+        jmp  WRITE_REP
 
-    ; Correct CX value before writing
-    mov cx, INPUT_LENGTH   ; Set correct length to write
-    ; sub cx, LR_SIZE
-    ; sub cx, si
+RET_REPLACE:
+    jmp B_REPLACE
 
-    ; Write data to file
-    mov  ah, 40h
-    mov  bx, FILE_HANDLE
-    lea  dx, RES_BUFFER
-    int  21h
+WRITE_END:          ;from RES_BUFFER[si] put all that left from the TEMP_BUFFER[si + SIZE_DIFF]
 
+        mov di, si               ; DI = SI (destination index in RES_BUFFER)
+        add si, SIZE_DIFF        ; SI = SI + SIZE_DIFF (source index in TEMP_BUFFER)
+
+TR_COPY_LOOP:
+    mov al, byte ptr [TEMP_BUFFER + si]  ; Load byte from TEMP_BUFFER
+    cmp al, 0Dh                          ; Check if it's the end (0Dh)
+    je  TR_COPY_DONE                          ; If yes, stop copying
+
+    mov byte ptr [RES_BUFFER + di], al   ; Store byte in RES_BUFFER
+
+    inc si   ; Move to next source byte
+    inc di   ; Move to next destination byte
+
+    jmp TR_COPY_LOOP   ; Repeat for the next byte
+
+TR_COPY_DONE:
+
+    cmp byte ptr [RES_BUFFER + di], 0Dh
+    je  TR_CLEAR_END
+    ; Place 0Dh at the end of copied data
+    mov byte ptr [RES_BUFFER + di], 0Dh
+    inc di   ; Move past the 0Dh
+
+    ; Now clear remaining space with 00h
+TR_CLEAR_LOOP:
+    cmp byte ptr [RES_BUFFER + di], 0Dh  ; Stop at the first existing 0Dh
+    je  TR_CLEAR_END                      ; Stop clearing if we reached it
+
+    mov byte ptr [RES_BUFFER + di], 00h  ; Fill remaining bytes with 00h
+    inc di
+    jmp TR_CLEAR_LOOP
+
+TR_CLEAR_END:
 
     jmp SEARCH_BEGINING
 
@@ -298,13 +356,28 @@ END_PROC:
 
 rewrite ENDP
 
-
-
     ; mov di, RULES_BEGGINING          ; PRINT SET OF RULS
     ; mov   ah, 09h
     ; lea   dx, BUFFER + di
     ; int   21h
+                xor si, si
+                b_vlad_loop:
+                    mov al, byte ptr [RES_BUFFER + si]
+                    cmp al, 0Dh
+                    je  vlad_loop
+                    inc si
+                    jmp b_vlad_loop
 
+
+                vlad_loop:
+                    inc si
+                    mov byte ptr [RES_BUFFER + si], 0Ah
+                    inc si
+                    mov byte ptr [RES_BUFFER + si], 24h
+                    inc si
+
+
+    EXIT:        
                  mov  ah, 09h
                  lea  dx, RES_BUFFER
                  int  21h
@@ -313,11 +386,23 @@ rewrite ENDP
                  mov  bx, FILE_HANDLE
                  int  21h
 
-                 jmp  EXIT
-
-    EXIT:        
                  mov  ax, 4C00h
                  int  21h
+
+
+    FILE_NAME db    128 dup (?)    ; Space for the input file name
+     ; Input file name
+    INPUT_HANDLE    dw ?
+    FILE_HANDLE     dw ?                  ; File handle
+    BUFFER          db 8000 dup (?)      ; Reduce buffer size to fit tiny model
+    RES_BUFFER      db 384 dup (?)
+    TEMP_BUFFER     db 20384 dup (?)
+    FILE_OUTPUT     db 'result.txt', 0    ; Output file name
+    INPUT_LENGTH    dw ?
+    RULES_BEGGINING dw ?
+    RULES_SIZE      dw ?
+    LR_SIZE         dw ?      ; Temporary storage for LHS
+    SIZE_DIFF       dw ?      ; Temporary storage for LHS
 
 end start
 
