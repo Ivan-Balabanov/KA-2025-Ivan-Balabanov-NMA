@@ -192,6 +192,8 @@ CONTINUE:
 
 SEARCH_BEGINING:
 
+    push 0h
+
     ; mov  ah, 09h
     ; lea  dx, RES_BUFFER
     ; int  21h
@@ -287,13 +289,23 @@ COPY_LOOP:
     cmp al, 0Dh       ; Check if end marker (0Dh) is reached
     je COPY_DONE      ; Stop if we reach 0Dh
 
+    cmp al,"."
+    je FIN_PROC
+
     jmp COPY_LOOP     ; Repeat
 
 END_PROC1:
     jmp END_PROC
 
-COPY_DONE:
+FIN_PROC:
+    
+    mov bp, sp          ; Copy SP to BP to reference stack values
+    mov byte ptr [bp+4], 99h
+    inc di
+    inc si
+    jmp COPY_LOOP
 
+COPY_DONE:
     pop si
     pop di
 
@@ -311,8 +323,8 @@ COPY_DONE:
         inc  di
         jmp  WRITE_REP
 
-RET_REPLACE:
-    jmp B_REPLACE
+; RET_REPLACE:
+;     jmp B_REPLACE
 
 WRITE_END:          ;from RES_BUFFER[si] put all that left from the TEMP_BUFFER[si + SIZE_DIFF]
 
@@ -350,6 +362,10 @@ TR_CLEAR_LOOP:
 
 TR_CLEAR_END:
 
+    pop di
+    cmp di, 99h
+    je END_PROC
+
     jmp SEARCH_BEGINING
 
 END_PROC:
@@ -360,27 +376,31 @@ rewrite ENDP
     ; mov   ah, 09h
     ; lea   dx, BUFFER + di
     ; int   21h
-                xor si, si
-                b_vlad_loop:
-                    mov al, byte ptr [RES_BUFFER + si]
-                    cmp al, 0Dh
-                    je  vlad_loop
+                
+
+        EXIT:        
+        xor si, si
+                 VLAD_LOOP:
+                    mov ah, 02h
+                    mov dl, RES_BUFFER[si]
+                    cmp dl, 0Dh
+                    je CLOSE
+                    cmp dl, 2Eh
+                    je SKIP_DOT
+                    int 21h
+
+                SKIP_DOT:
                     inc si
-                    jmp b_vlad_loop
+                    jmp VLAD_LOOP
 
 
-                vlad_loop:
-                    inc si
-                    mov byte ptr [RES_BUFFER + si], 0Ah
-                    inc si
-                    mov byte ptr [RES_BUFFER + si], 24h
-                    inc si
-
-
-    EXIT:        
-                 mov  ah, 09h
-                 lea  dx, RES_BUFFER
-                 int  21h
+            CLOSE:    
+                mov ah, 02h
+                mov dl, 0Dh
+                int 21h
+                mov ah, 02h
+                mov dl, 0Ah
+                int 21h
 
                  mov  ah, 3Eh
                  mov  bx, FILE_HANDLE
