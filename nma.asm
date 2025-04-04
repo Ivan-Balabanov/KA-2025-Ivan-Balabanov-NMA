@@ -36,7 +36,7 @@
                 MOV SI, 82h ; ????????? ?? ??????? ??????????
                 read_loop:
                     MOV AL, ES:[SI]
-                    CMP AL, 0DH   ; ?????? ?????
+                    CMP AL, 0AH   ; ?????? ?????
                     JE end_read
                     MOV FILE_NAME[di], AL  ; ????????? ??????
                     INC di
@@ -410,19 +410,34 @@ rewrite ENDP
                  int  21h
 
 
-    FILE_NAME db    128 dup (?)    ; Space for the input file name
      ; Input file name
     INPUT_HANDLE    dw ?
     FILE_HANDLE     dw ?                  ; File handle
-    BUFFER          db 8000 dup (?)      ; Reduce buffer size to fit tiny model
-    RES_BUFFER      db 384 dup (?)
-    TEMP_BUFFER     db 20384 dup (?)
     FILE_OUTPUT     db 'result.txt', 0    ; Output file name
     INPUT_LENGTH    dw ?
     RULES_BEGGINING dw ?
     RULES_SIZE      dw ?
     LR_SIZE         dw ?      ; Temporary storage for LHS
     SIZE_DIFF       dw ?      ; Temporary storage for LHS
+    
+    BUFFER          db ?      ; Reduce buffer size to fit tiny model
+    BUFFER_PADDING  db (($ - start)) dup(0)
 
+; RES_BUFFER at ~0300h
+RES_BUFFER      db ?
+
+; Pad to 0400h
+RES_PADDING     db (600h - ($ - start)) dup(0)
+
+; TEMP_BUFFER at ~0400h
+TEMP_BUFFER     db ?
+
+; Pad to 0600h
+TEMP_PADDING    db (1000h - ($ - start)) dup(0)
+
+; FILE_NAME at ~0600h
+FILE_NAME       db ?
+
+end start
 end start
 
