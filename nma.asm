@@ -75,7 +75,12 @@
                  mov  di, ax
                  mov  byte ptr [BUFFER + di], '$'
 
-                 mov  al, byte ptr [BUFFER + 4]          ;FIND the length of input argument
+                 xor  dx, dx
+                 xor  si, si
+                 mov  dl, byte ptr [BUFFER]
+                 add  si, dx
+                 add  si, 4
+                 mov  al, byte ptr [BUFFER + si]          ;FIND the length of input argument
                  xor  ah,ah
                  mov  INPUT_LENGTH, ax                   ; store the argument
 
@@ -88,7 +93,7 @@
 
     ; Move file pointer to the end (Append Mode)
                  mov  ah, 42h                            ; Move file pointer
-                 mov  al, 2                              ; AL = 2 (Move to end)
+                 mov  al, 0                              ; AL = 2 (Move to end)
                  mov  bx, FILE_HANDLE
                  xor  cx, cx                             ; CX:DX = 0 (Move 0 bytes)
                  xor  dx, dx
@@ -98,6 +103,7 @@
                  mov  ah, 40h
                  mov  bx, FILE_HANDLE
                  lea  dx, BUFFER + 8
+                 add  dl, byte ptr [BUFFER]
                  mov  cx, INPUT_LENGTH
                  int  21h
 
@@ -110,8 +116,12 @@
                  xor  ah, ah
                  mov  RULES_SIZE, ax
                  add  si, 4
+                 mov  dl, byte ptr [BUFFER]
+                 xor  dh, dh
+                 add  si, dx
 
                  mov  RULES_BEGGINING, si
+                 xor si, si
                 
 
                  mov  dx, offset FILE_NAME
@@ -146,7 +156,6 @@
                  xor  dx, dx
                  int  21h
 
-    ; Write buffer to output file
                  mov  dx, offset FILE_OUTPUT
                  mov  ah, 3Dh
                  xor  al, al                             ; AL = 0 (Read-Only mode)
@@ -194,9 +203,9 @@ SEARCH_BEGINING:
 
     push 0h
 
-    ; mov  ah, 09h
-    ; lea  dx, RES_BUFFER
-    ; int  21h
+    mov  ah, 09h
+    lea  dx, RES_BUFFER
+    int  21h
 
     xor  si, si
     mov  di, RULES_BEGGINING
@@ -299,10 +308,11 @@ END_PROC1:
 
 FIN_PROC:
     
-    mov bp, sp          ; Copy SP to BP to reference stack values
-    mov byte ptr [bp+4], 99h
-    inc di
-    inc si
+    mov RULES_SIZE, 99h
+    ; mov bp, sp          ; Copy SP to BP to reference stack values
+    ; mov byte ptr [bp+4], 99h
+    ; inc di
+    ; inc si
     jmp COPY_LOOP
 
 COPY_DONE:
@@ -362,7 +372,7 @@ TR_CLEAR_LOOP:
 
 TR_CLEAR_END:
 
-    pop di
+    mov di, RULES_SIZE
     cmp di, 99h
     je END_PROC
 
@@ -413,7 +423,7 @@ rewrite ENDP
      ; Input file name
     INPUT_HANDLE    dw ?
     FILE_HANDLE     dw ?                  ; File handle
-    FILE_OUTPUT     db 'result.txt', 0    ; Output file name
+    FILE_OUTPUT     db 'result1.txt', 0    ; Output file name
     INPUT_LENGTH    dw ?
     RULES_BEGGINING dw ?
     RULES_SIZE      dw ?
