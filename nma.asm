@@ -203,9 +203,9 @@ SEARCH_BEGINING:
 
     push 0h
 
-    mov  ah, 09h
-    lea  dx, RES_BUFFER
-    int  21h
+    ; mov  ah, 09h
+    ; lea  dx, RES_BUFFER
+    ; int  21h
 
     xor  si, si
     mov  di, RULES_BEGGINING
