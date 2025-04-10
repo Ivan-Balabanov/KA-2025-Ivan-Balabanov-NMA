@@ -73,7 +73,7 @@
 
     ; Add '$' terminator for printing
                  mov  di, ax
-                 mov  byte ptr [BUFFER + di], '$'
+                 mov  byte ptr [BUFFER + di], 7fh
 
                  xor  dx, dx
                  xor  si, si
@@ -159,7 +159,7 @@
 
     ; Add '$' terminator for printing
                  mov  di, ax
-                 mov  byte ptr [BUFFER + di], '$'
+                 mov  byte ptr [BUFFER + di], 7fh
     ; Print from the correct position
                  mov  di, RULES_BEGGINING
  
@@ -187,7 +187,7 @@
                  int  21h
 
                  mov  di, ax
-                 mov  byte ptr [RES_BUFFER + di], '$'
+                 mov  byte ptr [RES_BUFFER + di], 7fh
 
                  mov si, 1Ah
                  mov  LR_SIZE, si
@@ -278,7 +278,7 @@ NEXT_RULE:
     inc  di
     cmp  byte ptr [BUFFER + di], 0Ah
     je   PRE_LOOP_SEARCH
-    cmp  byte ptr [BUFFER + di], "$"
+    cmp  byte ptr [BUFFER + di], 7fh
     je   END_PROC1
     jmp  NEXT_RULE
 
@@ -360,7 +360,7 @@ COPY_DONE:
 
         cmp  byte ptr [BUFFER + di], "	"  ; Check if it's a tab character
         je   WRITE_END                    ; If tab found, stop replacing
-        cmp  byte ptr [BUFFER + di], "$"     ; Check if we reached end of string
+        cmp  byte ptr [BUFFER + di], 7fh     ; Check if we reached end of string
         je   WRITE_END
 
 
@@ -479,13 +479,13 @@ rewrite ENDP
 RES_BUFFER      db ?
 
 ; Pad to 0400h
-RES_PADDING     db (600h - ($ - start)) dup(0)
+RES_PADDING     db (800h - ($ - start)) dup(0)
 
 ; TEMP_BUFFER at ~0400h
 TEMP_BUFFER     db ?
 
 ; Pad to 0600h
-TEMP_PADDING    db (1000h - ($ - start)) dup(0)
+TEMP_PADDING    db (1600h - ($ - start)) dup(0)
 
 ; FILE_NAME at ~0600h
 FILE_NAME       db ?
