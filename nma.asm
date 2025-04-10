@@ -78,10 +78,12 @@
                  xor  dx, dx
                  xor  si, si
                  mov  dl, byte ptr [BUFFER]
+                 mov  dh, byte ptr [BUFFER + 1]
                  add  si, dx
                  add  si, 4
                  mov  al, byte ptr [BUFFER + si]          ;FIND the length of input argument
-                 xor  ah,ah
+                 inc  si
+                 mov  ah, byte ptr [BUFFER + si]
                  mov  INPUT_LENGTH, ax                   ; store the argument
 
                 ;  mov ah, 09h
@@ -113,7 +115,7 @@
                  mov  dx, offset BUFFER
                  add  dx, 8
                  mov  cl, byte ptr [BUFFER]
-                 xor  ch, ch
+                 mov  ch, byte ptr [BUFFER + 1]
                  add  dx, cx
                  xor  cx, cx
                  mov  cx, INPUT_LENGTH
@@ -127,7 +129,7 @@
                  mov  si, INPUT_LENGTH
                  add  si, 8
                  mov  dl, byte ptr [BUFFER]
-                 xor  dh, dh
+                 mov  dh, byte ptr [BUFFER + 1]
                  add  si, dx
 
                  mov  al, byte ptr [BUFFER + si]
@@ -189,7 +191,6 @@
 
                  mov si, 1Ah
                  mov  LR_SIZE, si
-
 
 rewrite PROC
 
