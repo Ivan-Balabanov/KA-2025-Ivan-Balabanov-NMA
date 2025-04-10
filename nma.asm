@@ -30,9 +30,9 @@
 ;                 ;  mov  ah, 09h
 ;                 ;  lea  dx, FILE_NAME
 ;                 ;  int  21h
-
-;     ; Open input file (Read-Only)
-                MOV di, 0   ; ????????? ????????
+;==============================================================================================================
+    ; Open input file (Read-Only)
+                                MOV di, 0   ; ????????? ????????
                 MOV SI, 82h ; ????????? ?? ??????? ??????????
                 read_loop:
                     MOV AL, ES:[SI]
@@ -43,7 +43,7 @@
                     INC SI
                     JMP read_loop
                 end_read:
-
+;==============================================================================================================
                  mov  dx, offset FILE_NAME
                  mov  ah, 3Dh
                  xor  al, al                             ; AL = 0 (Read-Only mode)
@@ -84,6 +84,10 @@
                  xor  ah,ah
                  mov  INPUT_LENGTH, ax                   ; store the argument
 
+                ;  mov ah, 09h
+                ;  lea dx, buffer
+                ;  int 21h
+
     ; Open output file (Write-Only, Create New)
                  lea  dx, FILE_OUTPUT                    ; Load the file name into DX
                  mov  ah, 3Ch                            ; DOS function to open file
@@ -93,32 +97,44 @@
 
     ; Move file pointer to the end (Append Mode)
                  mov  ah, 42h                            ; Move file pointer
-                 mov  al, 0                              ; AL = 2 (Move to end)
+                 mov  al, 2                              ; AL = 2 (Move to end)
                  mov  bx, FILE_HANDLE
                  xor  cx, cx                             ; CX:DX = 0 (Move 0 bytes)
                  xor  dx, dx
                  int  21h
 
+                ;  xor  si, si
+                ;  mov  si, byte ptr [BUFFER]
+                ;  add  si, 8
     ; Write buffer to output file
+                 xor  dx, dx
                  mov  ah, 40h
                  mov  bx, FILE_HANDLE
-                 lea  dx, BUFFER + 8
-                 add  dl, byte ptr [BUFFER]
+                 mov  dx, offset BUFFER
+                 add  dx, 8
+                 mov  cl, byte ptr [BUFFER]
+                 xor  ch, ch
+                 add  dx, cx
+                 xor  cx, cx
                  mov  cx, INPUT_LENGTH
                  int  21h
 
-                 mov  si, INPUT_LENGTH
-                 add  si, 7
+                ;  mov ah, 09h
+                ;  lea dx, buffer
+                ;  int 21h
 
-                 inc  si
-                 mov  al, [BUFFER + si]
+
+                 mov  si, INPUT_LENGTH
+                 add  si, 8
+                 mov  dl, byte ptr [BUFFER]
+                 xor  dh, dh
+                 add  si, dx
+
+                 mov  al, byte ptr [BUFFER + si]
                  sub  al, 2
                  xor  ah, ah
                  mov  RULES_SIZE, ax
                  add  si, 4
-                 mov  dl, byte ptr [BUFFER]
-                 xor  dh, dh
-                 add  si, dx
 
                  mov  RULES_BEGGINING, si
                  xor si, si
