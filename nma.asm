@@ -32,7 +32,7 @@
 ;                 ;  int  21h
 ;==============================================================================================================
     ; Open input file (Read-Only)
-                                MOV di, 0   ; ????????? ????????
+                                                                MOV di, 0   ; ????????? ????????
                 MOV SI, 82h ; ????????? ?? ??????? ??????????
                 read_loop:
                     MOV AL, ES:[SI]
@@ -190,7 +190,6 @@
                  mov si, 1Ah
                  mov  LR_SIZE, si
 
-                 
 
 rewrite PROC
 
@@ -218,10 +217,20 @@ CONTINUE:
 SEARCH_BEGINING:
 
     push 0h
+    xor  si, si
+
+    DOT_SEARCH:
+    cmp  byte ptr [RES_BUFFER + si], 0Dh
+    je   PREPARATIONS
+    cmp  byte ptr [RES_BUFFER + si], "."
+    je   END_PROC2
+    inc  si
+    jmp  DOT_SEARCH
 
     ; mov  ah, 09h
     ; lea  dx, RES_BUFFER
     ; int  21h
+PREPARATIONS:
 
     xor  si, si
     mov  di, RULES_BEGGINING
@@ -230,6 +239,8 @@ SEARCH_BEGINING:
     dec  si
 PRE_LOOP_SEARCH:
     inc  di
+    cmp  byte ptr [BUFFER + di], 09h
+    je   B_VERIFY
 LOOP_SEARCH:
     inc  si
     cmp  byte ptr [RES_BUFFER + si], 0Dh
@@ -243,7 +254,8 @@ LOOP_SEARCH:
 B_VERIFY:
     push si
     push di
-
+    cmp  byte ptr [BUFFER + di], 09h
+    je   B_REPLACE
 VERIFY:
     inc  di
     inc  si
@@ -274,6 +286,11 @@ B_REPLACE:
     mov ax, di          ; BIGGER DI (WHERE 09h BYTE FOUND)
     pop di              ; BEGINING OF WHERE THE RULE MATCHED THE LINE
     pop si              ; LOCATION WHERE THE MATCH WAS FOUND IN INPUT
+    cmp si, 0000h
+    jge  FINE_SI
+    xor si, si
+
+    FINE_SI:
     push ax             ; (STORING WHERE 09h BYTE FOUND)
     sub ax, di          ; SIZE OF LR
     mov LR_SIZE, ax     ; STORE LR
@@ -287,6 +304,9 @@ FIND_R_RULE:
     je   REPLACE
     inc  di
     jmp  FIND_R_RULE
+
+END_PROC2:
+    jmp END_PROC1
 
 REPLACE:
 
@@ -387,6 +407,11 @@ TR_CLEAR_LOOP:
     jmp TR_CLEAR_LOOP
 
 TR_CLEAR_END:
+
+
+    ; mov ah, 09h
+    ; lea  dx, RES_BUFFER
+    ; int 21h
 
     mov di, RULES_SIZE
     cmp di, 99h
