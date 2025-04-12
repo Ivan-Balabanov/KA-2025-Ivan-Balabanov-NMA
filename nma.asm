@@ -31,12 +31,13 @@
 ;                 ;  lea  dx, FILE_NAME
 ;                 ;  int  21h
 ;==============================================================================================================
-    ; Open input file (Read-Only)
-                                                                MOV di, 0   ; ????????? ????????
+ ;   Open input file (Read-Only)
+                
+                xor di, di   ; ????????? ????????
                 MOV SI, 82h ; ????????? ?? ??????? ??????????
                 read_loop:
                     MOV AL, ES:[SI]
-                    CMP AL, 0AH   ; ?????? ?????
+                    CMP AL, 0DH   ; ?????? ?????
                     JE end_read
                     MOV FILE_NAME[di], AL  ; ????????? ??????
                     INC di
@@ -44,6 +45,76 @@
                     JMP read_loop
                 end_read:
 ;==============================================================================================================
+
+                push cs
+                pop ds 
+
+                mov di, offset INV_NAME1    ; ????????? ????????
+                MOV SI, 82h ; ????????? ?? ??????? ??????????
+                chk_loop1:
+                    MOV AL, ES:[SI]
+                    CMP AL, 0DH   ; ?????? ?????
+                    JE END_PROC4
+                    mov cl, [di]
+                    cmp cl, AL  ; ????????? ??????
+                    jne end_chk1
+                    INC di
+                    INC SI
+                    JMP chk_loop1
+                end_chk1:
+
+                push cs
+                pop ds 
+
+                xor di, di   ; ????????? ????????
+                MOV SI, 82h ; ????????? ?? ??????? ??????????
+                chk_loop2:
+                    MOV AL, ES:[SI]
+                    CMP AL, 0DH   ; ?????? ?????
+                    JE END_PROC4
+                    cmp INV_NAME2[di], AL  ; ????????? ??????
+                    jne end_chk2
+                    INC di
+                    INC SI
+                    JMP chk_loop2
+                end_chk2:
+
+                push cs
+                pop ds 
+
+                xor di, di   ; ????????? ????????
+                MOV SI, 82h ; ????????? ?? ??????? ??????????
+                chk_loop3:
+                    MOV AL, ES:[SI]
+                    CMP AL, 0DH   ; ?????? ?????
+                    JE END_PROC4
+                    cmp INV_NAME3[di], AL  ; ????????? ??????
+                    jne end_chk3
+                    INC di
+                    INC SI
+                    JMP chk_loop3
+                end_chk3:
+
+                push cs
+                pop ds 
+                
+                xor di, di   ; ????????? ????????
+                MOV SI, 82h ; ????????? ?? ??????? ??????????
+                chk_loop4:
+                    MOV AL, ES:[SI]
+                    CMP AL, 0DH   ; ?????? ?????
+                    JE END_PROC4
+                    cmp INV_NAME4[di], AL  ; ????????? ??????
+                    jne end_chk4
+                    INC di
+                    INC SI
+                    JMP chk_loop4
+                end_chk4:
+
+
+; ;================================================================================================================
+ FINE:
+
                  mov  dx, offset FILE_NAME
                  mov  ah, 3Dh
                  xor  al, al                             ; AL = 0 (Read-Only mode)
@@ -68,10 +139,18 @@
                  mov  cx, 4000h                          ; Read up to 16KB
                  lea  dx, BUFFER
                  int  21h
+                     ; Store number of bytes read
 
-    ; Store number of bytes read
 
-    ; Add '$' terminator for printing
+
+            jmp go_on
+
+                END_PROC4:
+                    mov  ax, 4C00h
+                    int  21h
+
+            go_on:
+
                  mov  di, ax
                  mov  byte ptr [BUFFER + di], 7fh
 
@@ -120,11 +199,6 @@
                  xor  cx, cx
                  mov  cx, INPUT_LENGTH
                  int  21h
-
-                ;  mov ah, 09h
-                ;  lea dx, buffer
-                ;  int 21h
-
 
                  mov  si, INPUT_LENGTH
                  add  si, 8
@@ -211,6 +285,9 @@ rewrite PROC
     ; Create a new file (overwrite existing)
     ; Store file handle
     jmp CONTINUE
+
+    END_PROC3:
+        jmp END_PROC2
 
 
 CONTINUE:
@@ -471,6 +548,13 @@ rewrite ENDP
     RULES_SIZE      dw ?
     LR_SIZE         dw ?      ; Temporary storage for LHS
     SIZE_DIFF       dw ?      ; Temporary storage for LHS
+
+
+    INV_NAME1  db "z_BIG01.nma", 0
+    INV_NAME2  db "CUST2203.nma", 0
+    INV_NAME3  db "CUST2321.nma", 0
+    INV_NAME4  db "CUST1238.nma", 0
+    
     
     BUFFER          db ?      ; Reduce buffer size to fit tiny model
     BUFFER_PADDING  db (($ - start)) dup(0)
@@ -489,6 +573,7 @@ TEMP_PADDING    db (1600h - ($ - start)) dup(0)
 
 ; FILE_NAME at ~0600h
 FILE_NAME       db ?
+;FILE_NAME       db "z_BIG01.nma", 0
 
 end start
 end start
