@@ -46,22 +46,6 @@
                 end_read:
 ;==============================================================================================================
 
-                push cs
-                pop ds 
-
-                mov di, offset INV_NAME1    ; ????????? ????????
-                MOV SI, 82h ; ????????? ?? ??????? ??????????
-                chk_loop1:
-                    MOV AL, ES:[SI]
-                    CMP AL, 0DH   ; ?????? ?????
-                    JE END_PROC4
-                    mov cl, [di]
-                    cmp cl, AL  ; ????????? ??????
-                    jne end_chk1
-                    INC di
-                    INC SI
-                    JMP chk_loop1
-                end_chk1:
 
                 push cs
                 pop ds 
@@ -97,7 +81,7 @@
 
                 push cs
                 pop ds 
-                
+
                 xor di, di   ; ????????? ????????
                 MOV SI, 82h ; ????????? ?? ??????? ??????????
                 chk_loop4:
@@ -549,8 +533,6 @@ rewrite ENDP
     LR_SIZE         dw ?      ; Temporary storage for LHS
     SIZE_DIFF       dw ?      ; Temporary storage for LHS
 
-
-    INV_NAME1  db "z_BIG01.nma", 0
     INV_NAME2  db "CUST2203.nma", 0
     INV_NAME3  db "CUST2321.nma", 0
     INV_NAME4  db "CUST1238.nma", 0
